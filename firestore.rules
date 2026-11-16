@@ -1,0 +1,343 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email_verified == true && request.auth.token.email == 'seif82502@gmail.com')
+      );
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120 &&
+             data.selectedGradeId is string && data.selectedGradeId.size() >= 1 && data.selectedGradeId.size() <= 64 &&
+             data.selectedTrackId is string && data.selectedTrackId.size() >= 1 && data.selectedTrackId.size() <= 64 &&
+             data.academicYear is string && data.academicYear.size() >= 4 && data.academicYear.size() <= 32 &&
+             data.preferredLang in ['AR', 'EN'];
+    }
+
+    function isValidLessonProgress(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.lessonId is string && data.lessonId.size() >= 1 && data.lessonId.size() <= 128 &&
+             data.subjectId is string && data.subjectId.size() >= 1 && data.subjectId.size() <= 128 &&
+             data.gradeId is string && data.gradeId.size() >= 1 && data.gradeId.size() <= 64 &&
+             data.completed is bool &&
+             data.masteryScore is int && data.masteryScore >= 0 && data.masteryScore <= 100 &&
+             data.weakTopic is bool;
+    }
+
+    function isValidSavedSummary(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.lessonId is string && data.lessonId.size() >= 1 && data.lessonId.size() <= 128 &&
+             data.lessonTitle is string && data.lessonTitle.size() >= 1 && data.lessonTitle.size() <= 300 &&
+             data.subjectName is string && data.subjectName.size() >= 1 && data.subjectName.size() <= 150 &&
+             data.summaryType is string && data.summaryType.size() >= 1 && data.summaryType.size() <= 64 &&
+             data.content is string && data.content.size() >= 1 && data.content.size() <= 20000 &&
+             data.language in ['AR', 'EN'] &&
+             data.origin in ['OFFICIAL_MOE', 'AI_GENERATED', 'AI_TRANSLATED'];
+    }
+
+    function isValidAiConversation(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.subjectId is string && data.subjectId.size() >= 1 && data.subjectId.size() <= 128 &&
+             data.lessonId is string && data.lessonId.size() >= 1 && data.lessonId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             data.lastMessage is string && data.lastMessage.size() >= 1 && data.lastMessage.size() <= 4000 &&
+             data.messageCount is int && data.messageCount >= 1 && data.messageCount <= 500;
+    }
+
+    function isValidPracticeExamRecord(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 300 &&
+             data.gradeId is string && data.gradeId.size() >= 1 && data.gradeId.size() <= 64 &&
+             data.subjectId is string && data.subjectId.size() >= 1 && data.subjectId.size() <= 128 &&
+             data.difficulty is string && data.difficulty.size() >= 1 && data.difficulty.size() <= 32 &&
+             data.questionCount is int && data.questionCount >= 1 && data.questionCount <= 50 &&
+             data.score is int && data.score >= 0 && data.score <= 100 &&
+             data.isAiGenerated == true;
+    }
+
+    function isValidCurriculumVersion(data) {
+      return data.gradeId is string && data.gradeId.size() >= 1 && data.gradeId.size() <= 64 &&
+             data.subjectId is string && data.subjectId.size() >= 1 && data.subjectId.size() <= 128 &&
+             data.academicYear is string && data.academicYear.size() >= 4 && data.academicYear.size() <= 32 &&
+             data.semester is int && data.semester >= 0 && data.semester <= 2 &&
+             data.language in ['AR', 'EN'] &&
+             data.origin in ['OFFICIAL_MOE', 'AI_TRANSLATED'] &&
+             data.versionNumber is int && data.versionNumber >= 1 &&
+             data.status in ['PENDING_REVIEW', 'PUBLISHED', 'ARCHIVED', 'REJECTED'] &&
+             data.sourceUrl is string && data.sourceUrl.size() <= 1000 &&
+             data.fileSha256 is string && data.fileSha256.size() <= 128 &&
+             data.extractedUnitsSummary is string && data.extractedUnitsSummary.size() >= 1 && data.extractedUnitsSummary.size() <= 30000 &&
+             data.createdByUid is string && data.createdByUid.size() >= 1 && data.createdByUid.size() <= 128;
+    }
+
+    function isValidOfficialAssessment(data) {
+      return data.titleAr is string && data.titleAr.size() >= 1 && data.titleAr.size() <= 300 &&
+             data.titleEn is string && data.titleEn.size() >= 1 && data.titleEn.size() <= 300 &&
+             data.gradeId is string && data.gradeId.size() >= 1 && data.gradeId.size() <= 64 &&
+             data.subjectId is string && data.subjectId.size() >= 1 && data.subjectId.size() <= 128 &&
+             data.academicYear is string && data.academicYear.size() >= 4 && data.academicYear.size() <= 32 &&
+             data.semester is int && data.semester >= 1 && data.semester <= 2 &&
+             data.periodLabel is string && data.periodLabel.size() >= 1 && data.periodLabel.size() <= 100 &&
+             data.assessmentType in ['WEEKLY', 'MONTHLY', 'GENERAL', 'MODEL_EXAM', 'REVISION', 'QUESTION_BANK', 'EXAM_SPECIFICATION'] &&
+             data.language in ['AR', 'EN'] &&
+             data.sourceUrl is string && data.sourceUrl.size() >= 1 && data.sourceUrl.size() <= 1000 &&
+             data.publishedDateLabel is string && data.publishedDateLabel.size() >= 1 && data.publishedDateLabel.size() <= 64 &&
+             data.isOfficialVerified is bool;
+    }
+
+    function isValidCurriculumDiff(data) {
+      return data.versionId is string && data.versionId.size() >= 1 && data.versionId.size() <= 128 &&
+             data.subjectId is string && data.subjectId.size() >= 1 && data.subjectId.size() <= 128 &&
+             data.gradeId is string && data.gradeId.size() >= 1 && data.gradeId.size() <= 64 &&
+             data.addedTopics is string && data.addedTopics.size() <= 10000 &&
+             data.removedTopics is string && data.removedTopics.size() <= 10000 &&
+             data.modifiedLessons is string && data.modifiedLessons.size() <= 10000 &&
+             data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 5000 &&
+             data.reviewed is bool;
+    }
+
+    function isValidMoeSyncLog(data) {
+      return data.checkedUrl is string && data.checkedUrl.size() >= 1 && data.checkedUrl.size() <= 1000 &&
+             data.status is string && data.status.size() >= 1 && data.status.size() <= 64 &&
+             data.details is string && data.details.size() <= 4000 &&
+             data.checkedByUid is string && data.checkedByUid.size() >= 1 && data.checkedByUid.size() <= 128;
+    }
+
+    function isValidAdminAuditLog(data) {
+      return data.adminUid is string && data.adminUid.size() >= 1 && data.adminUid.size() <= 128 &&
+             data.action is string && data.action.size() >= 1 && data.action.size() <= 120 &&
+             data.targetId is string && data.targetId.size() <= 128 &&
+             data.details is string && data.details.size() <= 4000;
+    }
+
+    match /admins/{adminUid} {
+      allow get: if isOwner(adminUid) || isAdmin();
+      allow list: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    match /users/{userId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isValidId(userId) &&
+                       isOwner(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'selectedGradeId', 'selectedTrackId', 'academicYear', 'preferredLang', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'selectedGradeId', 'selectedTrackId', 'academicYear', 'preferredLang', 'createdAt', 'updatedAt']) &&
+                       isValidTimestamp(incoming().createdAt) &&
+                       isValidTimestamp(incoming().updatedAt) &&
+                       isValidUserProfile(incoming());
+      allow update: if isValidId(userId) &&
+                       isOwner(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidTimestamp(incoming().updatedAt) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'selectedGradeId', 'selectedTrackId', 'academicYear', 'preferredLang', 'updatedAt']);
+      allow delete: if isValidId(userId) && isOwner(userId);
+
+      match /lesson_progress/{lessonId} {
+        allow list: if isOwner(userId);
+        allow get: if isValidId(lessonId) && isOwner(userId);
+        allow create: if isValidId(lessonId) &&
+                         isOwner(userId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().lessonId == lessonId &&
+                         incoming().keys().hasAll(['userId', 'lessonId', 'subjectId', 'gradeId', 'completed', 'masteryScore', 'weakTopic', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'lessonId', 'subjectId', 'gradeId', 'completed', 'masteryScore', 'weakTopic', 'createdAt', 'updatedAt']) &&
+                         isValidTimestamp(incoming().createdAt) &&
+                         isValidTimestamp(incoming().updatedAt) &&
+                         isValidLessonProgress(incoming());
+        allow update: if isValidId(lessonId) &&
+                         isOwner(userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().lessonId == existing().lessonId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidTimestamp(incoming().updatedAt) &&
+                         isValidLessonProgress(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['subjectId', 'gradeId', 'completed', 'masteryScore', 'weakTopic', 'updatedAt']);
+        allow delete: if isValidId(lessonId) && isOwner(userId);
+      }
+
+      match /saved_summaries/{summaryId} {
+        allow list: if isOwner(userId);
+        allow get: if isValidId(summaryId) && isOwner(userId);
+        allow create: if isValidId(summaryId) &&
+                         isOwner(userId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'lessonId', 'lessonTitle', 'subjectName', 'summaryType', 'content', 'language', 'origin', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'lessonId', 'lessonTitle', 'subjectName', 'summaryType', 'content', 'language', 'origin', 'createdAt', 'updatedAt']) &&
+                         isValidTimestamp(incoming().createdAt) &&
+                         isValidTimestamp(incoming().updatedAt) &&
+                         isValidSavedSummary(incoming());
+        allow update: if isValidId(summaryId) &&
+                         isOwner(userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidTimestamp(incoming().updatedAt) &&
+                         isValidSavedSummary(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['content', 'updatedAt']);
+        allow delete: if isValidId(summaryId) && isOwner(userId);
+      }
+
+      match /conversations/{convId} {
+        allow list: if isOwner(userId);
+        allow get: if isValidId(convId) && isOwner(userId);
+        allow create: if isValidId(convId) &&
+                         isOwner(userId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'subjectId', 'lessonId', 'title', 'lastMessage', 'messageCount', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'subjectId', 'lessonId', 'title', 'lastMessage', 'messageCount', 'createdAt', 'updatedAt']) &&
+                         isValidTimestamp(incoming().createdAt) &&
+                         isValidTimestamp(incoming().updatedAt) &&
+                         isValidAiConversation(incoming());
+        allow update: if isValidId(convId) &&
+                         isOwner(userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidTimestamp(incoming().updatedAt) &&
+                         isValidAiConversation(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['lastMessage', 'messageCount', 'updatedAt']);
+        allow delete: if isValidId(convId) && isOwner(userId);
+      }
+
+      match /practice_exams/{examId} {
+        allow list: if isOwner(userId);
+        allow get: if isValidId(examId) && isOwner(userId);
+        allow create: if isValidId(examId) &&
+                         isOwner(userId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'gradeId', 'subjectId', 'difficulty', 'questionCount', 'score', 'isAiGenerated', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'gradeId', 'subjectId', 'difficulty', 'questionCount', 'score', 'isAiGenerated', 'createdAt', 'updatedAt']) &&
+                         isValidTimestamp(incoming().createdAt) &&
+                         isValidTimestamp(incoming().updatedAt) &&
+                         isValidPracticeExamRecord(incoming());
+        allow update: if isValidId(examId) &&
+                         isOwner(userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidTimestamp(incoming().updatedAt) &&
+                         isValidPracticeExamRecord(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['score', 'updatedAt']);
+        allow delete: if isValidId(examId) && isOwner(userId);
+      }
+    }
+
+    match /curriculum_versions/{versionId} {
+      allow list: if isSignedIn() && (existing().status == 'PUBLISHED' || isAdmin());
+      allow get: if isValidId(versionId) && isSignedIn() && (existing().status == 'PUBLISHED' || isAdmin());
+      allow create: if isValidId(versionId) &&
+                       isAdmin() &&
+                       incoming().createdByUid == request.auth.uid &&
+                       incoming().keys().hasAll(['gradeId', 'subjectId', 'academicYear', 'semester', 'language', 'origin', 'versionNumber', 'status', 'sourceUrl', 'fileSha256', 'extractedUnitsSummary', 'createdByUid', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['gradeId', 'subjectId', 'academicYear', 'semester', 'language', 'origin', 'versionNumber', 'status', 'sourceUrl', 'fileSha256', 'extractedUnitsSummary', 'createdByUid', 'createdAt', 'updatedAt']) &&
+                       isValidTimestamp(incoming().createdAt) &&
+                       isValidTimestamp(incoming().updatedAt) &&
+                       isValidCurriculumVersion(incoming());
+      allow update: if isValidId(versionId) &&
+                       isAdmin() &&
+                       incoming().createdByUid == existing().createdByUid &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidTimestamp(incoming().updatedAt) &&
+                       isValidCurriculumVersion(incoming()) &&
+                       (existing().status != 'PUBLISHED' || incoming().status == 'ARCHIVED') &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['status', 'extractedUnitsSummary', 'updatedAt']);
+      allow delete: if isValidId(versionId) && isAdmin();
+    }
+
+    match /official_assessments/{assessmentId} {
+      allow list: if isSignedIn() && (existing().isOfficialVerified == true || isAdmin());
+      allow get: if isValidId(assessmentId) && isSignedIn() && (existing().isOfficialVerified == true || isAdmin());
+      allow create: if isValidId(assessmentId) &&
+                       isAdmin() &&
+                       incoming().keys().hasAll(['titleAr', 'titleEn', 'gradeId', 'subjectId', 'academicYear', 'semester', 'periodLabel', 'assessmentType', 'language', 'sourceUrl', 'publishedDateLabel', 'isOfficialVerified', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['titleAr', 'titleEn', 'gradeId', 'subjectId', 'academicYear', 'semester', 'periodLabel', 'assessmentType', 'language', 'sourceUrl', 'publishedDateLabel', 'isOfficialVerified', 'createdAt', 'updatedAt']) &&
+                       isValidTimestamp(incoming().createdAt) &&
+                       isValidTimestamp(incoming().updatedAt) &&
+                       isValidOfficialAssessment(incoming());
+      allow update: if isValidId(assessmentId) &&
+                       isAdmin() &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidTimestamp(incoming().updatedAt) &&
+                       isValidOfficialAssessment(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['titleAr', 'titleEn', 'periodLabel', 'isOfficialVerified', 'updatedAt']);
+      allow delete: if isValidId(assessmentId) && isAdmin();
+    }
+
+    match /curriculum_diffs/{diffId} {
+      allow list: if isAdmin();
+      allow get: if isValidId(diffId) && isAdmin();
+      allow create: if isValidId(diffId) &&
+                       isAdmin() &&
+                       incoming().keys().hasAll(['versionId', 'subjectId', 'gradeId', 'addedTopics', 'removedTopics', 'modifiedLessons', 'summary', 'reviewed', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['versionId', 'subjectId', 'gradeId', 'addedTopics', 'removedTopics', 'modifiedLessons', 'summary', 'reviewed', 'createdAt', 'updatedAt']) &&
+                       isValidTimestamp(incoming().createdAt) &&
+                       isValidTimestamp(incoming().updatedAt) &&
+                       isValidCurriculumDiff(incoming());
+      allow update: if isValidId(diffId) &&
+                       isAdmin() &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidTimestamp(incoming().updatedAt) &&
+                       isValidCurriculumDiff(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['reviewed', 'updatedAt']);
+      allow delete: if isValidId(diffId) && isAdmin();
+    }
+
+    match /moe_sync_logs/{logId} {
+      allow list: if isAdmin();
+      allow get: if isValidId(logId) && isAdmin();
+      allow create: if isValidId(logId) &&
+                       isAdmin() &&
+                       incoming().checkedByUid == request.auth.uid &&
+                       incoming().keys().hasAll(['checkedUrl', 'status', 'details', 'checkedByUid', 'createdAt']) &&
+                       incoming().keys().hasOnly(['checkedUrl', 'status', 'details', 'checkedByUid', 'createdAt']) &&
+                       isValidTimestamp(incoming().createdAt) &&
+                       isValidMoeSyncLog(incoming());
+      allow update, delete: if false;
+    }
+
+    match /admin_audit_logs/{logId} {
+      allow list: if isAdmin();
+      allow get: if isValidId(logId) && isAdmin();
+      allow create: if isValidId(logId) &&
+                       isAdmin() &&
+                       incoming().adminUid == request.auth.uid &&
+                       incoming().keys().hasAll(['adminUid', 'action', 'targetId', 'details', 'createdAt']) &&
+                       incoming().keys().hasOnly(['adminUid', 'action', 'targetId', 'details', 'createdAt']) &&
+                       isValidTimestamp(incoming().createdAt) &&
+                       isValidAdminAuditLog(incoming());
+      allow update, delete: if false;
+    }
+  }
+}

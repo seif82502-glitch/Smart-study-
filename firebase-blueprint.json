@@ -1,0 +1,219 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Student or admin preferences including selected Egyptian grade, track, academic year, and language.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID of the user." },
+        "displayName": { "type": "string", "description": "User display name." },
+        "selectedGradeId": { "type": "string", "description": "Selected Egyptian grade ID (prep_1..sec_3)." },
+        "selectedTrackId": { "type": "string", "description": "Selected educational track ID (e.g. general, sci_bio, sci_math, lit, bacc_med)." },
+        "academicYear": { "type": "string", "description": "Academic year label e.g. 2026-2027." },
+        "preferredLang": { "type": "string", "enum": ["AR", "EN"], "description": "Preferred UI and curriculum language." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": ["userId", "displayName", "selectedGradeId", "selectedTrackId", "academicYear", "preferredLang", "createdAt", "updatedAt"]
+    },
+    "LessonProgress": {
+      "title": "LessonProgress",
+      "description": "Tracks completed lessons, mastery score, and weak topic flags per student.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "lessonId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "gradeId": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "masteryScore": { "type": "integer" },
+        "weakTopic": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "lessonId", "subjectId", "gradeId", "completed", "masteryScore", "weakTopic", "createdAt", "updatedAt"]
+    },
+    "SavedSummary": {
+      "title": "SavedSummary",
+      "description": "Saved lesson summaries or revision notes generated or bookmarked by the student.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "lessonId": { "type": "string" },
+        "lessonTitle": { "type": "string" },
+        "subjectName": { "type": "string" },
+        "summaryType": { "type": "string" },
+        "content": { "type": "string" },
+        "language": { "type": "string", "enum": ["AR", "EN"] },
+        "origin": { "type": "string", "enum": ["OFFICIAL_MOE", "AI_GENERATED", "AI_TRANSLATED"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "lessonId", "lessonTitle", "subjectName", "summaryType", "content", "language", "origin", "createdAt", "updatedAt"]
+    },
+    "AiConversation": {
+      "title": "AiConversation",
+      "description": "Saved AI tutor chat summary for dashboard recents.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "lessonId": { "type": "string" },
+        "title": { "type": "string" },
+        "lastMessage": { "type": "string" },
+        "messageCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "subjectId", "lessonId", "title", "lastMessage", "messageCount", "createdAt", "updatedAt"]
+    },
+    "PracticeExamRecord": {
+      "title": "PracticeExamRecord",
+      "description": "AI-generated practice exam result clearly distinct from official Ministry assessments.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "gradeId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "difficulty": { "type": "string" },
+        "questionCount": { "type": "integer" },
+        "score": { "type": "integer" },
+        "isAiGenerated": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "gradeId", "subjectId", "difficulty", "questionCount", "score", "isAiGenerated", "createdAt", "updatedAt"]
+    },
+    "CurriculumVersion": {
+      "title": "CurriculumVersion",
+      "description": "Versioned official or admin-imported curriculum package with approval status.",
+      "type": "object",
+      "properties": {
+        "gradeId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "academicYear": { "type": "string" },
+        "semester": { "type": "integer" },
+        "language": { "type": "string", "enum": ["AR", "EN"] },
+        "origin": { "type": "string", "enum": ["OFFICIAL_MOE", "AI_TRANSLATED"] },
+        "versionNumber": { "type": "integer" },
+        "status": { "type": "string", "enum": ["PENDING_REVIEW", "PUBLISHED", "ARCHIVED", "REJECTED"] },
+        "sourceUrl": { "type": "string" },
+        "fileSha256": { "type": "string" },
+        "extractedUnitsSummary": { "type": "string" },
+        "createdByUid": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["gradeId", "subjectId", "academicYear", "semester", "language", "origin", "versionNumber", "status", "sourceUrl", "fileSha256", "extractedUnitsSummary", "createdByUid", "createdAt", "updatedAt"]
+    },
+    "OfficialAssessment": {
+      "title": "OfficialAssessment",
+      "description": "Verified official Ministry of Education assessment metadata and URL.",
+      "type": "object",
+      "properties": {
+        "titleAr": { "type": "string" },
+        "titleEn": { "type": "string" },
+        "gradeId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "academicYear": { "type": "string" },
+        "semester": { "type": "integer" },
+        "periodLabel": { "type": "string" },
+        "assessmentType": { "type": "string", "enum": ["WEEKLY", "MONTHLY", "GENERAL", "MODEL_EXAM", "REVISION", "QUESTION_BANK", "EXAM_SPECIFICATION"] },
+        "language": { "type": "string", "enum": ["AR", "EN"] },
+        "sourceUrl": { "type": "string" },
+        "publishedDateLabel": { "type": "string" },
+        "isOfficialVerified": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["titleAr", "titleEn", "gradeId", "subjectId", "academicYear", "semester", "periodLabel", "assessmentType", "language", "sourceUrl", "publishedDateLabel", "isOfficialVerified", "createdAt", "updatedAt"]
+    },
+    "CurriculumDiffReport": {
+      "title": "CurriculumDiffReport",
+      "description": "Change detection report between old and staged curriculum versions.",
+      "type": "object",
+      "properties": {
+        "versionId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "gradeId": { "type": "string" },
+        "addedTopics": { "type": "string" },
+        "removedTopics": { "type": "string" },
+        "modifiedLessons": { "type": "string" },
+        "summary": { "type": "string" },
+        "reviewed": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["versionId", "subjectId", "gradeId", "addedTopics", "removedTopics", "modifiedLessons", "summary", "reviewed", "createdAt", "updatedAt"]
+    },
+    "MoeSyncLog": {
+      "title": "MoeSyncLog",
+      "description": "Log of official moe.gov.eg resource checks and import results.",
+      "type": "object",
+      "properties": {
+        "checkedUrl": { "type": "string" },
+        "status": { "type": "string" },
+        "details": { "type": "string" },
+        "checkedByUid": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["checkedUrl", "status", "details", "checkedByUid", "createdAt"]
+    },
+    "AdminAuditLog": {
+      "title": "AdminAuditLog",
+      "description": "Immutable audit log of administrative actions.",
+      "type": "object",
+      "properties": {
+        "adminUid": { "type": "string" },
+        "action": { "type": "string" },
+        "targetId": { "type": "string" },
+        "details": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["adminUid", "action", "targetId", "details", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private student profile and curriculum selection."
+    },
+    "/users/{userId}/lesson_progress/{lessonId}": {
+      "schema": { "$ref": "#/entities/LessonProgress" },
+      "description": "Student lesson completion and mastery progress."
+    },
+    "/users/{userId}/saved_summaries/{summaryId}": {
+      "schema": { "$ref": "#/entities/SavedSummary" },
+      "description": "Student saved AI/curriculum summaries."
+    },
+    "/users/{userId}/conversations/{convId}": {
+      "schema": { "$ref": "#/entities/AiConversation" },
+      "description": "Student AI tutor conversation summaries."
+    },
+    "/users/{userId}/practice_exams/{examId}": {
+      "schema": { "$ref": "#/entities/PracticeExamRecord" },
+      "description": "Student AI practice exam scores."
+    },
+    "/curriculum_versions/{versionId}": {
+      "schema": { "$ref": "#/entities/CurriculumVersion" },
+      "description": "Versioned curriculum records; students may read PUBLISHED versions only."
+    },
+    "/official_assessments/{assessmentId}": {
+      "schema": { "$ref": "#/entities/OfficialAssessment" },
+      "description": "Official MOE assessment entries; students may read verified entries only."
+    },
+    "/curriculum_diffs/{diffId}": {
+      "schema": { "$ref": "#/entities/CurriculumDiffReport" },
+      "description": "Admin-only curriculum change reports."
+    },
+    "/moe_sync_logs/{logId}": {
+      "schema": { "$ref": "#/entities/MoeSyncLog" },
+      "description": "Admin-only MOE sync logs."
+    },
+    "/admin_audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AdminAuditLog" },
+      "description": "Admin-only immutable audit logs."
+    }
+  }
+}

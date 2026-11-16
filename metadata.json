@@ -1,0 +1,6 @@
+{
+  "name": "Smart Study",
+  "description": "Complete Egyptian Education AI-powered learning platform covering Preparatory, Secondary, and Baccalaureate curricula, official Ministry of Education resources and assessments, bilingual RTL/LTR support, and a real AI study assistant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
